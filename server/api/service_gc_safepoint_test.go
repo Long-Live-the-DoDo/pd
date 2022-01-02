@@ -77,7 +77,7 @@ func (s *testServiceGCSafepointSuite) TestRegionStats(c *C) {
 		err := storage.SaveServiceGCSafePoint(ssp)
 		c.Assert(err, IsNil)
 	}
-	storage.SaveGCSafePoint(1)
+	storage.SaveGCSafePoint(1, nil)
 
 	res, err := testDialClient.Get(sspURL)
 	c.Assert(err, IsNil)

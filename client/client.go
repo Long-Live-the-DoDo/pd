@@ -99,7 +99,7 @@ type Client interface {
 	// Update GC safe point. TiKV will check it and do GC themselves if necessary.
 	// If the given safePoint is less than the current one, it will not be updated.
 	// Returns the new safePoint after updating.
-	UpdateGCSafePoint(ctx context.Context, safePoint uint64) (uint64, error)
+	UpdateGCSafePoint(ctx context.Context, safePoint uint64, savepoints []uint64) (uint64, error)
 	// UpdateServiceGCSafePoint updates the safepoint for specific service and
 	// returns the minimum safepoint across all services, this value is used to
 	// determine the safepoint for multiple services, it does not trigger a GC
@@ -1567,7 +1567,7 @@ func (c *client) GetAllStores(ctx context.Context, opts ...GetStoreOption) ([]*m
 	return resp.GetStores(), nil
 }
 
-func (c *client) UpdateGCSafePoint(ctx context.Context, safePoint uint64) (uint64, error) {
+func (c *client) UpdateGCSafePoint(ctx context.Context, safePoint uint64, savePoints []uint64) (uint64, error) {
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		span = opentracing.StartSpan("pdclient.UpdateGCSafePoint", opentracing.ChildOf(span.Context()))
 		defer span.Finish()
@@ -1577,8 +1577,9 @@ func (c *client) UpdateGCSafePoint(ctx context.Context, safePoint uint64) (uint6
 
 	ctx, cancel := context.WithTimeout(ctx, c.option.timeout)
 	req := &pdpb.UpdateGCSafePointRequest{
-		Header:    c.requestHeader(),
-		SafePoint: safePoint,
+		Header:     c.requestHeader(),
+		SafePoint:  safePoint,
+		SavePoints: savePoints,
 	}
 	ctx = grpcutil.BuildForwardContext(ctx, c.GetLeaderAddr())
 	resp, err := c.getClient().UpdateGCSafePoint(ctx, req)

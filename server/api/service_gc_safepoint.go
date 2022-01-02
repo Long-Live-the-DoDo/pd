@@ -48,7 +48,7 @@ type listServiceGCSafepoint struct {
 // @Router /gc/safepoint [get]
 func (h *serviceGCSafepointHandler) List(w http.ResponseWriter, r *http.Request) {
 	storage := h.svr.GetStorage()
-	gcSafepoint, err := storage.LoadGCSafePoint()
+	gcSafepoint, _, err := storage.LoadGCSafePoint()
 	if err != nil {
 		h.rd.JSON(w, http.StatusInternalServerError, err.Error())
 		return
