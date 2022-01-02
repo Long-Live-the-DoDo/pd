@@ -456,27 +456,42 @@ func (s *Storage) Close() error {
 }
 
 // SaveGCSafePoint saves new GC safe point to storage.
-func (s *Storage) SaveGCSafePoint(safePoint uint64) error {
+func (s *Storage) SaveGCSafePoint(safePoint uint64, savePoints []uint64) error {
 	key := path.Join(gcPath, "safe_point")
-	value := strconv.FormatUint(safePoint, 16)
-	return s.Save(key, value)
+	points := []string{strconv.FormatUint(safePoint, 16)}
+	for _, p := range savePoints {
+		points = append(points, strconv.FormatUint(p, 16))
+	}
+	return s.Save(key, strings.Join(points, ","))
 }
 
 // LoadGCSafePoint loads current GC safe point from storage.
-func (s *Storage) LoadGCSafePoint() (uint64, error) {
+func (s *Storage) LoadGCSafePoint() (uint64, []uint64, error) {
 	key := path.Join(gcPath, "safe_point")
 	value, err := s.Load(key)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 	if value == "" {
-		return 0, nil
+		return 0, nil, nil
 	}
-	safePoint, err := strconv.ParseUint(value, 16, 64)
+	points := strings.Split(value, ",")
+	if len(points) == 0 {
+		return 0, nil, nil
+	}
+	safePoint, err := strconv.ParseUint(points[0], 16, 64)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
-	return safePoint, nil
+	var savePoints []uint64
+	for i := 1; i < len(points); i++ {
+		p, err := strconv.ParseUint(points[i], 16, 64)
+		if err != nil {
+			return 0, nil, err
+		}
+		savePoints = append(savePoints, p)
+	}
+	return safePoint, savePoints, nil
 }
 
 // ServiceSafePoint is the safepoint for a specific service

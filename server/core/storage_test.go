@@ -191,13 +191,13 @@ func (s *testKVSuite) TestLoadGCSafePoint(c *C) {
 	storage := NewStorage(kv.NewMemoryKV())
 	testData := []uint64{0, 1, 2, 233, 2333, 23333333333, math.MaxUint64}
 
-	r, e := storage.LoadGCSafePoint()
+	r, _, e := storage.LoadGCSafePoint()
 	c.Assert(r, Equals, uint64(0))
 	c.Assert(e, IsNil)
 	for _, safePoint := range testData {
-		err := storage.SaveGCSafePoint(safePoint)
+		err := storage.SaveGCSafePoint(safePoint, nil)
 		c.Assert(err, IsNil)
-		safePoint1, err := storage.LoadGCSafePoint()
+		safePoint1, _, err := storage.LoadGCSafePoint()
 		c.Assert(err, IsNil)
 		c.Assert(safePoint, Equals, safePoint1)
 	}
